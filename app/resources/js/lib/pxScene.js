@@ -759,8 +759,9 @@ async function updateComponent(component, nextProps, nextState) {
  *
  * @param  {(pxObject|pxComponent)} element The element to add.
  * @param  {Object} parent  The pxscene Object to add the new element to.
- *                          If null, then the new element shall be added as a
- *                          child to the root object of the current scene.
+ *                          If null or undefined, then the new element shall be
+ *                          added as a child to the root object of the current
+ *                          scene.
  * @return {void}
  */
 var render = function(element, parent) {
@@ -790,8 +791,22 @@ var createFontResource = function(props) {
   return SCENE.create(props);
 };
 
+/**
+ * Creates an image resource that can be shared.
+ * This is basically a wrapper around the Scene.create(..) method.
+ *
+ * @param  {Object} props The properties used to create the resource (url,
+ *                        proxy, w, h, etc).
+ * @return {Object}       The pxScene imageResource object created.
+ */
+var createImageResource = function(props) {
+  props.t = 'imageResource';
+  return SCENE.create(props);
+};
+
 module.exports.render = render;
 module.exports.createFontResource = createFontResource;
+module.exports.createImageResource = createImageResource;
 module.exports.pxComponent = pxComponent;
 module.exports.pxObject = pxObject;
 module.exports.pxRect = pxRect;
