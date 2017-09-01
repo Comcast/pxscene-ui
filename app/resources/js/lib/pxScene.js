@@ -45,6 +45,14 @@ const UPDATE_QUEUE = new Queue(1, Infinity);
 
 // -------------------------------------------------------------------- //
 
+/**
+ * A pxObject serves as a stand-in for the actual pxScene object instance
+ * that it represents: it aims to provide a transparent interface to the
+ * underlying pxScene object, as well as hold the data used to create and
+ * update the pxScene object. A pxObject also provides the means to compare
+ * multiple possible states of a pxScene object without having to create or
+ * alter actual instances of that object.
+ */
 class pxObject {
   constructor(props) {
     this.props = props || {};
@@ -769,7 +777,21 @@ var render = function(element, parent) {
     });
 };
 
+/**
+ * Creates a font resource that can be shared.
+ * This is basically a wrapper around the Scene.create(..) method.
+ *
+ * @param  {Object} props The properties used to create the resource (url,
+ *                        proxy, etc).
+ * @return {Object}       The pxScene fontResource object created.
+ */
+var createFontResource = function(props) {
+  props.t = 'fontResource';
+  return SCENE.create(props);
+};
+
 module.exports.render = render;
+module.exports.createFontResource = createFontResource;
 module.exports.pxComponent = pxComponent;
 module.exports.pxObject = pxObject;
 module.exports.pxRect = pxRect;
