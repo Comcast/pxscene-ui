@@ -1,3 +1,5 @@
+var Queue = require('promise-queue');
+
 // -------------------------------------------------------------------- //
 // Module variables
 // -------------------------------------------------------------------- //
@@ -32,6 +34,14 @@ const EVENTS = [
  * @type {Object}
  */
 var SCENE;
+
+/**
+ * A queue for making sure that updates do not overlap in their execution.
+ * Updates triggered by calls to a component's setState() method are qeueued
+ * so that they are processed one at a time.
+ * @type {Queue}
+ */
+const UPDATE_QUEUE = new Queue(1, Infinity);
 
 // -------------------------------------------------------------------- //
 
@@ -177,12 +187,16 @@ class pxComponent {
     if (skipUpdate) {
       this.__applyUpdates(nextProps, nextState);
     } else {
-      try {
-        // Begin to recursively update this component and its children.
-        await updateComponent(this, nextProps, nextState);
-      } catch (error) {
-        console.error('Error updating ' + this.className + ': ' + error);
-      }
+      // Queue a task to recursively update this component and its children.
+      UPDATE_QUEUE.add(
+        async function() {
+          await updateComponent(this, nextProps, nextState);
+        }.bind(this)
+      ).catch(
+        function(error) {
+          console.error('Error updating ' + this.className + ': ' + error);
+        }.bind(this)
+      );
     }
   }
 
@@ -381,6 +395,7 @@ function renderElement(element, parent) {
   // renderComponent() and renderObject() will recursively call this method.
   if (element instanceof pxComponent) {
     return renderComponent(element, parent);
+    // return renderComponent(element, parent);
   } else {
     return renderObject(element, parent);
   }
@@ -455,6 +470,7 @@ function renderComponent(component, parent) {
       rootElement.__parent = component;
 
       // Signal the component that its rendering has finished.
+      console.log('componentDidMount ' + component.className);
       component.componentDidMount();
 
       // Pass the rendered component to the next promise in the chain.
@@ -742,7 +758,11 @@ async function updateComponent(component, nextProps, nextState) {
 var render = function(element, parent) {
   initScene()
     .then(function(scene) {
-      renderElement(element, parent);
+      // Queue the render job to prevent updates from taking place before
+      // the components have mounted.
+      UPDATE_QUEUE.add(async function() {
+        await renderElement(element, parent);
+      });
     })
     .catch(function(error) {
       console.error(error);
