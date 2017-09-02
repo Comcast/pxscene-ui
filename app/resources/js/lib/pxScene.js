@@ -804,6 +804,15 @@ var createImageResource = function(props) {
   return SCENE.create(props);
 };
 
+// TODO Ideally, the scene should be initialized by the time this module is
+// required/imported, but that just isn't possible until px.import can be made
+// synchronous. So we're returning a promise here for that entry point of the
+// app (eg. index.js) to wait on before it can make any calls to this module
+// that requires the scene to be initialized.
+module.exports = (function() {
+  return initScene();
+})();
+
 module.exports.render = render;
 module.exports.createFontResource = createFontResource;
 module.exports.createImageResource = createImageResource;
