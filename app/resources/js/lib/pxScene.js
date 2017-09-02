@@ -45,6 +45,14 @@ const UPDATE_QUEUE = new Queue(1, Infinity);
 
 // -------------------------------------------------------------------- //
 
+/**
+ * A pxObject serves as a stand-in for the actual pxScene object instance
+ * that it represents: it aims to provide a transparent interface to the
+ * underlying pxScene object, as well as hold the data used to create and
+ * update the pxScene object. A pxObject also provides the means to compare
+ * multiple possible states of a pxScene object without having to create or
+ * alter actual instances of that object.
+ */
 class pxObject {
   constructor(props) {
     this.props = props || {};
@@ -751,8 +759,9 @@ async function updateComponent(component, nextProps, nextState) {
  *
  * @param  {(pxObject|pxComponent)} element The element to add.
  * @param  {Object} parent  The pxscene Object to add the new element to.
- *                          If null, then the new element shall be added as a
- *                          child to the root object of the current scene.
+ *                          If null or undefined, then the new element shall be
+ *                          added as a child to the root object of the current
+ *                          scene.
  * @return {void}
  */
 var render = function(element, parent) {
@@ -769,7 +778,44 @@ var render = function(element, parent) {
     });
 };
 
+/**
+ * Creates a font resource that can be shared.
+ * This is basically a wrapper around the Scene.create(..) method.
+ *
+ * @param  {Object} props The properties used to create the resource (url,
+ *                        proxy, etc).
+ * @return {Object}       The pxScene fontResource object created.
+ */
+var createFontResource = function(props) {
+  props.t = 'fontResource';
+  return SCENE.create(props);
+};
+
+/**
+ * Creates an image resource that can be shared.
+ * This is basically a wrapper around the Scene.create(..) method.
+ *
+ * @param  {Object} props The properties used to create the resource (url,
+ *                        proxy, w, h, etc).
+ * @return {Object}       The pxScene imageResource object created.
+ */
+var createImageResource = function(props) {
+  props.t = 'imageResource';
+  return SCENE.create(props);
+};
+
+// TODO Ideally, the scene should be initialized by the time this module is
+// required/imported, but that just isn't possible until px.import can be made
+// synchronous. So we're returning a promise here for that entry point of the
+// app (eg. index.js) to wait on before it can make any calls to this module
+// that requires the scene to be initialized.
+module.exports = (function() {
+  return initScene();
+})();
+
 module.exports.render = render;
+module.exports.createFontResource = createFontResource;
+module.exports.createImageResource = createImageResource;
 module.exports.pxComponent = pxComponent;
 module.exports.pxObject = pxObject;
 module.exports.pxRect = pxRect;
