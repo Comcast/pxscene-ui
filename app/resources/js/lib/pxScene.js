@@ -187,17 +187,20 @@ class pxComponent {
   }
 
   async __setState(skipUpdate, state) {
-    // Calculate what the next state would be.
-    var nextState = Object.assign({}, this.__state, state);
-    // The props of this component don't change when the state changes.
-    var nextProps = Object.assign({}, this.props);
-
     if (skipUpdate) {
+      // Calculate what the next state would be.
+      var nextState = calculateNextState(this, state);
+      // The props of this component don't change when the state changes.
+      var nextProps = calculateNextProps(this, {});
       this.__applyUpdates(nextProps, nextState);
     } else {
       // Queue a task to recursively update this component and its children.
       UPDATE_QUEUE.add(
         async function() {
+          // Delay calculating the next props/state so that any ongoing updates
+          // can be resolved first.
+          var nextState = calculateNextState(this, state);
+          var nextProps = calculateNextProps(this, {});
           await updateComponent(this, nextProps, nextState);
         }.bind(this)
       ).catch(
@@ -494,6 +497,33 @@ function renderComponent(component, parent) {
 // -------------------------------------------------------------------- //
 // Methods for updating components and objects
 // -------------------------------------------------------------------- //
+
+/**
+ * Calculates what a component's props would be after applying a set of proposed
+ * changes.
+ *
+ * @param  {pxComponent} component The pxComponent to apply the changes to.
+ * @param  {Object}      newProps  The proposed changes to props.
+ * @return {Object}                A copy of the component's props, with the
+ *                                 changes applied.
+ */
+function calculateNextProps(component, newProps) {
+  // Return a copy of the current props, with the changes merged in.
+  return Object.assign({}, component.props, newProps);
+}
+
+/**
+ * Calculates what a component's state would be after applying a set of proposed
+ * changes.
+ * @param  {pxComponent} component The pxComponent to apply the changes to.
+ * @param  {Object}      newState  The proposed changes to state.
+ * @return {Object}                A copy of the component's state, with the
+ *                                 changes applied.
+ */
+function calculateNextState(component, newState) {
+  // Return a copy of the current state, with the changes merged in.
+  return Object.assign({}, component.__state, newState);
+}
 
 /**
  * Unregisters an object's callback functions from the events that they're
