@@ -179,33 +179,9 @@ class pxComponent {
     this.__state = state;
   }
 
-  __setState(skipUpdate, state) {
-    if (skipUpdate) {
-      // Calculate what the next state would be.
-      var nextState = calculateNextState(this, state);
-      // The props of this component don't change when the state changes.
-      var nextProps = calculateNextProps(this, {});
-      applyComponentUpdates(this, nextProps, nextState);
-    } else {
-      // Queue a task to recursively update this component and its children.
-      UPDATE_QUEUE.add(
-        async function() {
-          // Delay calculating the next props/state so that any ongoing updates
-          // can be resolved first.
-          var nextState = calculateNextState(this, state);
-          var nextProps = calculateNextProps(this, {});
-          await updateComponent(this, nextProps, nextState);
-        }.bind(this)
-      ).catch(
-        function(error) {
-          console.error('Error updating ' + this.className + ': ' + error);
-        }.bind(this)
-      );
-    }
-  }
-
   addChildren(...children) {
-    // Children added to a component will be passed as props.
+    // Children added to a component this way will be passed as the special
+    // props.children to be used by the component's render method.
     this.props.children = this.props.children || [];
     this.props.children = this.props.children.concat(children);
     return this;
@@ -268,9 +244,56 @@ function calculateNextState(component, newState) {
   return Object.assign({}, component.__state, newState);
 }
 
+/**
+ * Replaces the current props/state of a component.
+ *
+ * @param  {pxComponent} component The pxComponent whose props/state to change.
+ * @param  {Object}      nextProps The new props to replace the old ones with.
+ * @param  {Object}      nextState The new state to replace the old one with.
+ * @return {void}
+ */
 function applyComponentUpdates(component, nextProps, nextState) {
   component.props = nextProps;
   component.__state = nextState;
+}
+
+/**
+ * Updates the state of a component.
+ *
+ * A pxComponent's setState() method is actually a copy of this function --
+ * with the context bound to the pxComponent and the 'skipUpdate' parameter
+ * curried in,
+ *
+ * @param {boolean} skipUpdate If true, then the state of the component shall
+ *                             be updated immediately, without triggering a
+ *                             full update.
+ * @param {Object}  state      The changes to update the state with.
+ * @return {void}
+ */
+function setState(skipUpdate, state) {
+  if (skipUpdate) {
+    // Calculate what the next state would be.
+    var nextState = calculateNextState(this, state);
+    // The props of this component don't change when the state changes.
+    var nextProps = calculateNextProps(this, {});
+    // Apply the changes immediately without triggering an update.
+    applyComponentUpdates(this, nextProps, nextState);
+  } else {
+    // Queue a task to recursively update this component and its children.
+    UPDATE_QUEUE.add(
+      async function() {
+        // Delay calculating the next props/state so that any ongoing updates
+        // can be resolved first.
+        var nextState = calculateNextState(this, state);
+        var nextProps = calculateNextProps(this, {});
+        await updateComponent(this, nextProps, nextState);
+      }.bind(this)
+    ).catch(
+      function(error) {
+        console.error('Error updating ' + this.className + ': ' + error);
+      }.bind(this)
+    );
+  }
 }
 
 // -------------------------------------------------------------------- //
@@ -288,7 +311,7 @@ function callComponentRender(component) {
     console.error(error);
   }
   // Re-enable the component's setState() method.
-  component.setState = component.__setState.bind(component, false);
+  component.setState = setState.bind(component, false);
   return element;
 }
 
@@ -299,7 +322,7 @@ function callComponentWillMount(component) {
     console.warn('Use "setState" to update the state of a component');
   };
   // Enable the component's setState() method for the first time.
-  component.setState = component.__setState.bind(component, false);
+  component.setState = setState.bind(component, false);
   try {
     component.componentWillMount();
   } catch (error) {
@@ -318,13 +341,13 @@ function callComponentDidMount(component) {
 function callComponentWillReceiveProps(component, nextProps) {
   // Temporarily allow setState to be called within willReceiveProps without
   // triggering any updates.
-  component.setState = component.__setState.bind(component, true);
+  component.setState = setState.bind(component, true);
   try {
     component.componentWillReceiveProps(nextProps);
   } catch (error) {
     console.error(error);
   }
-  component.setState = component.__setState.bind(component, false);
+  component.setState = setState.bind(component, false);
 }
 
 function callShouldComponentUpdate(component, nextProps, nextState) {
@@ -349,7 +372,7 @@ function callComponentWillUpdate(component, nextProps, nextState) {
   }
   applyComponentUpdates(component, nextProps, nextState);
   // Re-enable the component's setState() method.
-  component.setState = component.__setState.bind(component, false);
+  component.setState = setState.bind(component, false);
 }
 
 function callComponentDidUpdate(component, prevProps, prevState) {
