@@ -150,9 +150,6 @@ class pxComponent {
     this.__children = [];
     this.__root = null;
     this.__refs = {};
-
-    // By default, calling setState triggers an automatic update.
-    this.setState = this.__setState.bind(this, false);
   }
 
   get className() {
@@ -192,7 +189,7 @@ class pxComponent {
       var nextState = calculateNextState(this, state);
       // The props of this component don't change when the state changes.
       var nextProps = calculateNextProps(this, {});
-      this.__applyUpdates(nextProps, nextState);
+      applyComponentUpdates(this, nextProps, nextState);
     } else {
       // Queue a task to recursively update this component and its children.
       UPDATE_QUEUE.add(
@@ -209,28 +206,6 @@ class pxComponent {
         }.bind(this)
       );
     }
-  }
-
-  __applyUpdates(nextProps, nextState) {
-    this.props = nextProps;
-    this.__state = nextState;
-  }
-
-  __componentWillReceiveProps(nextProps) {
-    // Temporarily allow setState to be called within willReceiveProps without
-    // triggering any updates.
-    this.setState = this.__setState.bind(this, true);
-    this.componentWillReceiveProps(nextProps);
-    this.setState = this.__setState.bind(this, false);
-  }
-
-  __sendComponentWillUpdate(nextProps, nextState) {
-    // Prevent setState() from being called within componentWillUpdate().
-    delete this.setState;
-    this.componentWillUpdate(nextProps, nextState);
-    this.__applyUpdates(nextProps, nextState);
-    // Re-enable this component's setState() method.
-    this.setState = this.__setState.bind(this, false);
   }
 
   addChildren(...children) {
@@ -263,6 +238,94 @@ class pxComponent {
   componentDidUpdate(prevProps, prevState) {}
 
   componentWillUnmount() {}
+}
+
+// -------------------------------------------------------------------- //
+// These methods are used for calculating the props/states of a
+// component during an update.
+// -------------------------------------------------------------------- //
+
+/**
+ * Calculates what a component's props would be after applying a set of proposed
+ * changes.
+ *
+ * @param  {pxComponent} component The pxComponent to apply the changes to.
+ * @param  {Object}      newProps  The proposed changes to props.
+ * @return {Object}                A copy of the component's props, with the
+ *                                 changes applied.
+ */
+function calculateNextProps(component, newProps) {
+  // Return a copy of the current props, with the changes merged in.
+  return Object.assign({}, component.props, newProps);
+}
+
+/**
+ * Calculates what a component's state would be after applying a set of proposed
+ * changes.
+ * @param  {pxComponent} component The pxComponent to apply the changes to.
+ * @param  {Object}      newState  The proposed changes to state.
+ * @return {Object}                A copy of the component's state, with the
+ *                                 changes applied.
+ */
+function calculateNextState(component, newState) {
+  // Return a copy of the current state, with the changes merged in.
+  return Object.assign({}, component.__state, newState);
+}
+
+function applyComponentUpdates(component, nextProps, nextState) {
+  component.props = nextProps;
+  component.__state = nextState;
+}
+
+// -------------------------------------------------------------------- //
+// These methods are called around the various lifecycle methods of a
+// component.
+// -------------------------------------------------------------------- //
+
+function callComponentWillMount(component) {
+  // Enable the component's setState() method for the first time.
+  component.setState = component.__setState.bind(component, false);
+  component.componentWillMount();
+}
+
+function callComponentDidMount(component) {
+  component.componentDidMount();
+}
+
+function callComponentWillReceiveProps(component, nextProps) {
+  // Temporarily allow setState to be called within willReceiveProps without
+  // triggering any updates.
+  component.setState = component.__setState.bind(component, true);
+  component.componentWillReceiveProps(nextProps);
+  component.setState = component.__setState.bind(component, false);
+}
+
+function callShouldComponentUpdate(component, nextProps, nextState) {
+  // Prevent setState() from being called within componentWillUpdate().
+  delete component.setState;
+  var shouldUpdate = component.shouldComponentUpdate(nextProps, nextState);
+  // Re-enable the component's setState() method.
+  component.setState = component.__setState.bind(component, false);
+  return shouldUpdate;
+}
+
+function callComponentWillUpdate(component, nextProps, nextState) {
+  // Prevent setState() from being called within componentWillUpdate().
+  delete component.setState;
+  component.componentWillUpdate(nextProps, nextState);
+  applyComponentUpdates(component, nextProps, nextState);
+  // Re-enable the component's setState() method.
+  component.setState = component.__setState.bind(component, false);
+}
+
+function callComponentDidUpdate(component, prevProps, prevState) {
+  component.componentDidUpdate(prevProps, prevState);
+}
+
+function callComponentWillUnmount(component) {
+  // Prevent setState() from being called within componentWillUnmount().
+  delete component.setState;
+  component.componentWillUnmount();
 }
 
 // -------------------------------------------------------------------- //
@@ -463,7 +526,7 @@ function renderComponent(component, parent) {
   return importModules(component)
     .then(function(component) {
       // Signal the component that its rendering is about to begin.
-      component.componentWillMount();
+      callComponentWillMount(component);
 
       // The root element is returned by pxComponent.render().
       var rootElement = component.render();
@@ -482,7 +545,7 @@ function renderComponent(component, parent) {
 
       // Signal the component that its rendering has finished.
       console.log('componentDidMount ' + component.className);
-      component.componentDidMount();
+      callComponentDidMount(component);
 
       // Pass the rendered component to the next promise in the chain.
       return component;
@@ -497,33 +560,6 @@ function renderComponent(component, parent) {
 // -------------------------------------------------------------------- //
 // Methods for updating components and objects
 // -------------------------------------------------------------------- //
-
-/**
- * Calculates what a component's props would be after applying a set of proposed
- * changes.
- *
- * @param  {pxComponent} component The pxComponent to apply the changes to.
- * @param  {Object}      newProps  The proposed changes to props.
- * @return {Object}                A copy of the component's props, with the
- *                                 changes applied.
- */
-function calculateNextProps(component, newProps) {
-  // Return a copy of the current props, with the changes merged in.
-  return Object.assign({}, component.props, newProps);
-}
-
-/**
- * Calculates what a component's state would be after applying a set of proposed
- * changes.
- * @param  {pxComponent} component The pxComponent to apply the changes to.
- * @param  {Object}      newState  The proposed changes to state.
- * @return {Object}                A copy of the component's state, with the
- *                                 changes applied.
- */
-function calculateNextState(component, newState) {
-  // Return a copy of the current state, with the changes merged in.
-  return Object.assign({}, component.__state, newState);
-}
 
 /**
  * Unregisters an object's callback functions from the events that they're
@@ -589,7 +625,7 @@ function deleteElement(element) {
     if (element instanceof pxObject) {
       unregisterEventHandlers(element);
     } else {
-      element.componentWillUnmount();
+      callComponentWillUnmount(element);
     }
     element.__root.remove();
     // Pass the removed object to any promises down the chain.
@@ -664,8 +700,9 @@ async function updateElement(oldElement, newElement) {
     var nextProps = Object.assign({}, newElement.props);
 
     // Signal the component that new props are incoming.
-    // NOTE: componentWillReceiveProps() is allowed to call setState().
-    oldElement.__componentWillReceiveProps(nextProps);
+    // NOTE: componentWillReceiveProps() is allowed to call setState() without
+    // triggering actual updates.
+    callComponentWillReceiveProps(oldElement, nextProps);
 
     var nextState = Object.assign({}, oldElement.__state);
     return await updateComponent(oldElement, nextProps, nextState);
@@ -749,16 +786,16 @@ async function updateComponent(component, nextProps, nextState) {
   // TODO Possible optimization through comparison of props/state.
 
   // shouldComponentUpdate() is called whenever new state/props is received.
-  if (!component.shouldComponentUpdate(nextProps, nextState)) {
+  if (!callShouldComponentUpdate(component, nextProps, nextState)) {
     // If the component decided to skip the update, just apply the changes.
-    component.__applyUpdates(nextProps, nextState);
+    applyComponentUpdates(component, nextProps, nextState);
 
     // Pass the component to any promises down the chain.
     return component;
   }
 
   // Signal the component that an update is imminent.
-  component.__sendComponentWillUpdate(nextProps, nextState);
+  callComponentWillUpdate(component, nextProps, nextState);
 
   // Prepare to update the component's root element with any changes that
   // might be reflected in the new root element returned by render().
@@ -770,7 +807,7 @@ async function updateComponent(component, nextProps, nextState) {
   // children have been updated.
   await updateElement(oldElement, newElement);
   // Signal the component that its update has finished.
-  component.componentDidUpdate(prevProps, prevState);
+  callComponentDidUpdate(component, prevProps, prevState);
 
   // Pass the updated component to any promises down the chain.
   return component;
