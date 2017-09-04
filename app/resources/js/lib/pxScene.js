@@ -286,44 +286,74 @@ function callComponentWillMount(component) {
   };
   // Enable the component's setState() method for the first time.
   component.setState = component.__setState.bind(component, false);
-  component.componentWillMount();
+  try {
+    component.componentWillMount();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function callComponentDidMount(component) {
-  component.componentDidMount();
+  try {
+    component.componentDidMount();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function callComponentWillReceiveProps(component, nextProps) {
   // Temporarily allow setState to be called within willReceiveProps without
   // triggering any updates.
   component.setState = component.__setState.bind(component, true);
-  component.componentWillReceiveProps(nextProps);
+  try {
+    component.componentWillReceiveProps(nextProps);
+  } catch (error) {
+    console.error(error);
+  }
   component.setState = component.__setState.bind(component, false);
 }
 
 function callShouldComponentUpdate(component, nextProps, nextState) {
   // React doesn't prevent shouldComponentUpdate() from calling setState(),
   // even though doing so doesn't make much sense...
-  return component.shouldComponentUpdate(nextProps, nextState);
+  var shouldUpdate = true;
+  try {
+    shouldUpdate = component.shouldComponentUpdate(nextProps, nextState);
+  } catch (error) {
+    console.error(error);
+  }
+  return shouldUpdate;
 }
 
 function callComponentWillUpdate(component, nextProps, nextState) {
   // Prevent setState() from being called within componentWillUpdate().
   delete component.setState;
-  component.componentWillUpdate(nextProps, nextState);
+  try {
+    component.componentWillUpdate(nextProps, nextState);
+  } catch (error) {
+    console.error(error);
+  }
   applyComponentUpdates(component, nextProps, nextState);
   // Re-enable the component's setState() method.
   component.setState = component.__setState.bind(component, false);
 }
 
 function callComponentDidUpdate(component, prevProps, prevState) {
-  component.componentDidUpdate(prevProps, prevState);
+  try {
+    component.componentDidUpdate(prevProps, prevState);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function callComponentWillUnmount(component) {
   // Prevent setState() from being called within componentWillUnmount().
   delete component.setState;
-  component.componentWillUnmount();
+  try {
+    component.componentWillUnmount();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // -------------------------------------------------------------------- //
