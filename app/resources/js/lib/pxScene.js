@@ -161,8 +161,8 @@ class pxComponent {
   }
 
   set state(state) {
-    // Allow the state to be set directly only once.
-    // For now, assume that this only happens in the component's constructor.
+    // This setter allows the state to be set directly within the constructor.
+    // This setter shall be removed by the time the component is mounted.
     this.__setInitialState(state);
   }
 
@@ -177,10 +177,6 @@ class pxComponent {
   __setInitialState(state) {
     // Update the private variable.
     this.__state = state;
-    // Redefine this method so that it can't be used again to set the state.
-    this.__setInitialState = function() {
-      console.warn('Use "setState" to update the state of a component');
-    };
   }
 
   async __setState(skipUpdate, state) {
@@ -283,6 +279,11 @@ function applyComponentUpdates(component, nextProps, nextState) {
 // -------------------------------------------------------------------- //
 
 function callComponentWillMount(component) {
+  // Redefine the component's __setInitialState method to effectively forbid
+  // setting the state directly outside of the constructor.
+  component.__setInitialState = function() {
+    console.warn('Use "setState" to update the state of a component');
+  };
   // Enable the component's setState() method for the first time.
   component.setState = component.__setState.bind(component, false);
   component.componentWillMount();
@@ -301,12 +302,9 @@ function callComponentWillReceiveProps(component, nextProps) {
 }
 
 function callShouldComponentUpdate(component, nextProps, nextState) {
-  // Prevent setState() from being called within componentWillUpdate().
-  delete component.setState;
-  var shouldUpdate = component.shouldComponentUpdate(nextProps, nextState);
-  // Re-enable the component's setState() method.
-  component.setState = component.__setState.bind(component, false);
-  return shouldUpdate;
+  // React doesn't prevent shouldComponentUpdate() from calling setState(),
+  // even though doing so doesn't make much sense...
+  return component.shouldComponentUpdate(nextProps, nextState);
 }
 
 function callComponentWillUpdate(component, nextProps, nextState) {
