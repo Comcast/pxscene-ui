@@ -179,7 +179,7 @@ class pxComponent {
     this.__state = state;
   }
 
-  async __setState(skipUpdate, state) {
+  __setState(skipUpdate, state) {
     if (skipUpdate) {
       // Calculate what the next state would be.
       var nextState = calculateNextState(this, state);
@@ -277,6 +277,20 @@ function applyComponentUpdates(component, nextProps, nextState) {
 // These methods are called around the various lifecycle methods of a
 // component.
 // -------------------------------------------------------------------- //
+
+function callComponentRender(component) {
+  // Prevent setState() from being called within render().
+  delete component.setState;
+  var element;
+  try {
+    element = component.render();
+  } catch (error) {
+    console.error(error);
+  }
+  // Re-enable the component's setState() method.
+  component.setState = component.__setState.bind(component, false);
+  return element;
+}
 
 function callComponentWillMount(component) {
   // Redefine the component's __setInitialState method to effectively forbid
@@ -557,7 +571,7 @@ function renderComponent(component, parent) {
       callComponentWillMount(component);
 
       // The root element is returned by pxComponent.render().
-      var rootElement = component.render();
+      var rootElement = callComponentRender(component);
 
       // Pass the rendered root element to the next promise in the chain.
       return renderElement(rootElement, parent);
@@ -828,7 +842,7 @@ async function updateComponent(component, nextProps, nextState) {
   // Prepare to update the component's root element with any changes that
   // might be reflected in the new root element returned by render().
   var oldElement = component.__children[0];
-  var newElement = component.render();
+  var newElement = callComponentRender(component);
 
   // Recursively update the component's root element.
   // Once this update is complete, we know that the component and all of its
