@@ -45,6 +45,14 @@ const UPDATE_QUEUE = new Queue(1, Infinity);
 
 // -------------------------------------------------------------------- //
 
+/**
+ * A pxObject serves as a stand-in for the actual pxScene object instance
+ * that it represents: it aims to provide a transparent interface to the
+ * underlying pxScene object, as well as hold the data used to create and
+ * update the pxScene object. A pxObject also provides the means to compare
+ * multiple possible states of a pxScene object without having to create or
+ * alter actual instances of that object.
+ */
 class pxObject {
   constructor(props) {
     this.props = props || {};
@@ -142,9 +150,6 @@ class pxComponent {
     this.__children = [];
     this.__root = null;
     this.__refs = {};
-
-    // By default, calling setState triggers an automatic update.
-    this.setState = this.__setState.bind(this, false);
   }
 
   get className() {
@@ -156,8 +161,8 @@ class pxComponent {
   }
 
   set state(state) {
-    // Allow the state to be set directly only once.
-    // For now, assume that this only happens in the component's constructor.
+    // This setter allows the state to be set directly within the constructor.
+    // This setter shall be removed by the time the component is mounted.
     this.__setInitialState(state);
   }
 
@@ -172,58 +177,11 @@ class pxComponent {
   __setInitialState(state) {
     // Update the private variable.
     this.__state = state;
-    // Redefine this method so that it can't be used again to set the state.
-    this.__setInitialState = function() {
-      console.warn('Use "setState" to update the state of a component');
-    };
-  }
-
-  async __setState(skipUpdate, state) {
-    // Calculate what the next state would be.
-    var nextState = Object.assign({}, this.__state, state);
-    // The props of this component don't change when the state changes.
-    var nextProps = Object.assign({}, this.props);
-
-    if (skipUpdate) {
-      this.__applyUpdates(nextProps, nextState);
-    } else {
-      // Queue a task to recursively update this component and its children.
-      UPDATE_QUEUE.add(
-        async function() {
-          await updateComponent(this, nextProps, nextState);
-        }.bind(this)
-      ).catch(
-        function(error) {
-          console.error('Error updating ' + this.className + ': ' + error);
-        }.bind(this)
-      );
-    }
-  }
-
-  __applyUpdates(nextProps, nextState) {
-    this.props = nextProps;
-    this.__state = nextState;
-  }
-
-  __componentWillReceiveProps(nextProps) {
-    // Temporarily allow setState to be called within willReceiveProps without
-    // triggering any updates.
-    this.setState = this.__setState.bind(this, true);
-    this.componentWillReceiveProps(nextProps);
-    this.setState = this.__setState.bind(this, false);
-  }
-
-  __sendComponentWillUpdate(nextProps, nextState) {
-    // Prevent setState() from being called within componentWillUpdate().
-    delete this.setState;
-    this.componentWillUpdate(nextProps, nextState);
-    this.__applyUpdates(nextProps, nextState);
-    // Re-enable this component's setState() method.
-    this.setState = this.__setState.bind(this, false);
   }
 
   addChildren(...children) {
-    // Children added to a component will be passed as props.
+    // Children added to a component this way will be passed as the special
+    // props.children to be used by the component's render method.
     this.props.children = this.props.children || [];
     this.props.children = this.props.children.concat(children);
     return this;
@@ -252,6 +210,187 @@ class pxComponent {
   componentDidUpdate(prevProps, prevState) {}
 
   componentWillUnmount() {}
+}
+
+// -------------------------------------------------------------------- //
+// These methods are used for calculating the props/states of a
+// component during an update.
+// -------------------------------------------------------------------- //
+
+/**
+ * Calculates what a component's props would be after applying a set of proposed
+ * changes.
+ *
+ * @param  {pxComponent} component The pxComponent to apply the changes to.
+ * @param  {Object}      newProps  The proposed changes to props.
+ * @return {Object}                A copy of the component's props, with the
+ *                                 changes applied.
+ */
+function calculateNextProps(component, newProps) {
+  // Return a copy of the current props, with the changes merged in.
+  return Object.assign({}, component.props, newProps);
+}
+
+/**
+ * Calculates what a component's state would be after applying a set of proposed
+ * changes.
+ * @param  {pxComponent} component The pxComponent to apply the changes to.
+ * @param  {Object}      newState  The proposed changes to state.
+ * @return {Object}                A copy of the component's state, with the
+ *                                 changes applied.
+ */
+function calculateNextState(component, newState) {
+  // Return a copy of the current state, with the changes merged in.
+  return Object.assign({}, component.__state, newState);
+}
+
+/**
+ * Replaces the current props/state of a component.
+ *
+ * @param  {pxComponent} component The pxComponent whose props/state to change.
+ * @param  {Object}      nextProps The new props to replace the old ones with.
+ * @param  {Object}      nextState The new state to replace the old one with.
+ * @return {void}
+ */
+function applyComponentUpdates(component, nextProps, nextState) {
+  component.props = nextProps;
+  component.__state = nextState;
+}
+
+/**
+ * Updates the state of a component.
+ *
+ * A pxComponent's setState() method is actually a copy of this function --
+ * with the context bound to the pxComponent and the 'skipUpdate' parameter
+ * curried in,
+ *
+ * @param {boolean} skipUpdate If true, then the state of the component shall
+ *                             be updated immediately, without triggering a
+ *                             full update.
+ * @param {Object}  state      The changes to update the state with.
+ * @return {void}
+ */
+function setState(skipUpdate, state) {
+  if (skipUpdate) {
+    // Calculate what the next state would be.
+    var nextState = calculateNextState(this, state);
+    // The props of this component don't change when the state changes.
+    var nextProps = calculateNextProps(this, {});
+    // Apply the changes immediately without triggering an update.
+    applyComponentUpdates(this, nextProps, nextState);
+  } else {
+    // Queue a task to recursively update this component and its children.
+    UPDATE_QUEUE.add(
+      async function() {
+        // Delay calculating the next props/state so that any ongoing updates
+        // can be resolved first.
+        var nextState = calculateNextState(this, state);
+        var nextProps = calculateNextProps(this, {});
+        await updateComponent(this, nextProps, nextState);
+      }.bind(this)
+    ).catch(
+      function(error) {
+        console.error('Error updating ' + this.className + ': ' + error);
+      }.bind(this)
+    );
+  }
+}
+
+// -------------------------------------------------------------------- //
+// These methods are called around the various lifecycle methods of a
+// component.
+// -------------------------------------------------------------------- //
+
+function callComponentRender(component) {
+  // Prevent setState() from being called within render().
+  delete component.setState;
+  var element;
+  try {
+    element = component.render();
+  } catch (error) {
+    console.error(error);
+  }
+  // Re-enable the component's setState() method.
+  component.setState = setState.bind(component, false);
+  return element;
+}
+
+function callComponentWillMount(component) {
+  // Redefine the component's __setInitialState method to effectively forbid
+  // setting the state directly outside of the constructor.
+  component.__setInitialState = function() {
+    console.warn('Use "setState" to update the state of a component');
+  };
+  // Enable the component's setState() method for the first time.
+  component.setState = setState.bind(component, false);
+  try {
+    component.componentWillMount();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function callComponentDidMount(component) {
+  try {
+    component.componentDidMount();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function callComponentWillReceiveProps(component, nextProps) {
+  // Temporarily allow setState to be called within willReceiveProps without
+  // triggering any updates.
+  component.setState = setState.bind(component, true);
+  try {
+    component.componentWillReceiveProps(nextProps);
+  } catch (error) {
+    console.error(error);
+  }
+  component.setState = setState.bind(component, false);
+}
+
+function callShouldComponentUpdate(component, nextProps, nextState) {
+  // React doesn't prevent shouldComponentUpdate() from calling setState(),
+  // even though doing so doesn't make much sense...
+  var shouldUpdate = true;
+  try {
+    shouldUpdate = component.shouldComponentUpdate(nextProps, nextState);
+  } catch (error) {
+    console.error(error);
+  }
+  return shouldUpdate;
+}
+
+function callComponentWillUpdate(component, nextProps, nextState) {
+  // Prevent setState() from being called within componentWillUpdate().
+  delete component.setState;
+  try {
+    component.componentWillUpdate(nextProps, nextState);
+  } catch (error) {
+    console.error(error);
+  }
+  applyComponentUpdates(component, nextProps, nextState);
+  // Re-enable the component's setState() method.
+  component.setState = setState.bind(component, false);
+}
+
+function callComponentDidUpdate(component, prevProps, prevState) {
+  try {
+    component.componentDidUpdate(prevProps, prevState);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function callComponentWillUnmount(component) {
+  // Prevent setState() from being called within componentWillUnmount().
+  delete component.setState;
+  try {
+    component.componentWillUnmount();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // -------------------------------------------------------------------- //
@@ -452,10 +591,10 @@ function renderComponent(component, parent) {
   return importModules(component)
     .then(function(component) {
       // Signal the component that its rendering is about to begin.
-      component.componentWillMount();
+      callComponentWillMount(component);
 
       // The root element is returned by pxComponent.render().
-      var rootElement = component.render();
+      var rootElement = callComponentRender(component);
 
       // Pass the rendered root element to the next promise in the chain.
       return renderElement(rootElement, parent);
@@ -471,7 +610,7 @@ function renderComponent(component, parent) {
 
       // Signal the component that its rendering has finished.
       console.log('componentDidMount ' + component.className);
-      component.componentDidMount();
+      callComponentDidMount(component);
 
       // Pass the rendered component to the next promise in the chain.
       return component;
@@ -551,7 +690,7 @@ function deleteElement(element) {
     if (element instanceof pxObject) {
       unregisterEventHandlers(element);
     } else {
-      element.componentWillUnmount();
+      callComponentWillUnmount(element);
     }
     element.__root.remove();
     // Pass the removed object to any promises down the chain.
@@ -626,8 +765,9 @@ async function updateElement(oldElement, newElement) {
     var nextProps = Object.assign({}, newElement.props);
 
     // Signal the component that new props are incoming.
-    // NOTE: componentWillReceiveProps() is allowed to call setState().
-    oldElement.__componentWillReceiveProps(nextProps);
+    // NOTE: componentWillReceiveProps() is allowed to call setState() without
+    // triggering actual updates.
+    callComponentWillReceiveProps(oldElement, nextProps);
 
     var nextState = Object.assign({}, oldElement.__state);
     return await updateComponent(oldElement, nextProps, nextState);
@@ -711,28 +851,28 @@ async function updateComponent(component, nextProps, nextState) {
   // TODO Possible optimization through comparison of props/state.
 
   // shouldComponentUpdate() is called whenever new state/props is received.
-  if (!component.shouldComponentUpdate(nextProps, nextState)) {
+  if (!callShouldComponentUpdate(component, nextProps, nextState)) {
     // If the component decided to skip the update, just apply the changes.
-    component.__applyUpdates(nextProps, nextState);
+    applyComponentUpdates(component, nextProps, nextState);
 
     // Pass the component to any promises down the chain.
     return component;
   }
 
   // Signal the component that an update is imminent.
-  component.__sendComponentWillUpdate(nextProps, nextState);
+  callComponentWillUpdate(component, nextProps, nextState);
 
   // Prepare to update the component's root element with any changes that
   // might be reflected in the new root element returned by render().
   var oldElement = component.__children[0];
-  var newElement = component.render();
+  var newElement = callComponentRender(component);
 
   // Recursively update the component's root element.
   // Once this update is complete, we know that the component and all of its
   // children have been updated.
   await updateElement(oldElement, newElement);
   // Signal the component that its update has finished.
-  component.componentDidUpdate(prevProps, prevState);
+  callComponentDidUpdate(component, prevProps, prevState);
 
   // Pass the updated component to any promises down the chain.
   return component;
@@ -751,8 +891,9 @@ async function updateComponent(component, nextProps, nextState) {
  *
  * @param  {(pxObject|pxComponent)} element The element to add.
  * @param  {Object} parent  The pxscene Object to add the new element to.
- *                          If null, then the new element shall be added as a
- *                          child to the root object of the current scene.
+ *                          If null or undefined, then the new element shall be
+ *                          added as a child to the root object of the current
+ *                          scene.
  * @return {void}
  */
 var render = function(element, parent) {
@@ -769,7 +910,44 @@ var render = function(element, parent) {
     });
 };
 
+/**
+ * Creates a font resource that can be shared.
+ * This is basically a wrapper around the Scene.create(..) method.
+ *
+ * @param  {Object} props The properties used to create the resource (url,
+ *                        proxy, etc).
+ * @return {Object}       The pxScene fontResource object created.
+ */
+var createFontResource = function(props) {
+  props.t = 'fontResource';
+  return SCENE.create(props);
+};
+
+/**
+ * Creates an image resource that can be shared.
+ * This is basically a wrapper around the Scene.create(..) method.
+ *
+ * @param  {Object} props The properties used to create the resource (url,
+ *                        proxy, w, h, etc).
+ * @return {Object}       The pxScene imageResource object created.
+ */
+var createImageResource = function(props) {
+  props.t = 'imageResource';
+  return SCENE.create(props);
+};
+
+// TODO Ideally, the scene should be initialized by the time this module is
+// required/imported, but that just isn't possible until px.import can be made
+// synchronous. So we're returning a promise here for that entry point of the
+// app (eg. index.js) to wait on before it can make any calls to this module
+// that requires the scene to be initialized.
+module.exports = (function() {
+  return initScene();
+})();
+
 module.exports.render = render;
+module.exports.createFontResource = createFontResource;
+module.exports.createImageResource = createImageResource;
 module.exports.pxComponent = pxComponent;
 module.exports.pxObject = pxObject;
 module.exports.pxRect = pxRect;
