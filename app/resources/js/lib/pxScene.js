@@ -87,6 +87,14 @@ class pxObject {
     return this.__root.focus;
   }
 
+  get id() {
+    return this.__root.id;
+  }
+
+  get parent() {
+    return this.__root.parent;
+  }
+
   animate(json, duration, tween, type, count) {
     this.__root.animate(json, duration, tween, type, count);
   }
@@ -713,19 +721,20 @@ function deleteElement(element) {
 function replaceElement(oldElement, newElement) {
   var parent = oldElement.__parent;
 
+  // Identify the pxScene object that the element is a child of.
+  var parentObj =
+    oldElement instanceof pxComponent ? oldElement.__root : oldElement.parent;
+
   // Find the target element within its parent's children array.
   for (var i = parent.__children.length - 1; i >= 0; i--) {
     if (parent.__children[i] === oldElement) {
       // First render the new element.
-      return renderElement(newElement, parent.__root.parent)
+      return renderElement(newElement, parentObj)
         .then(function() {
           // Remove the outgoing element.
           return deleteElement(oldElement);
         })
         .then(function() {
-          // Update the reference to the root pxscene object.
-          parent.__root = newElement.__root;
-
           // Explicitly mark the outgoing element for GC.
           parent.__children[i] = null;
           // Insert the new element in its place.
