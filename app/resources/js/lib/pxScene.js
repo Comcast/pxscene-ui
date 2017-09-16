@@ -184,7 +184,7 @@ class pxComponent {
 
   __setInitialState(state) {
     // Update the private variable.
-    this.__state = state;
+    this.__state = Object.assign(this.__state, state);
   }
 
   addChildren(...children) {
