@@ -87,6 +87,14 @@ class pxObject {
     return this.__root.focus;
   }
 
+  set x(x) {
+    this.__root.x = x;
+  }
+
+  get x() {
+    return this.__root.x;
+  }
+
   get id() {
     return this.__root.id;
   }
