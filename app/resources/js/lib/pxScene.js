@@ -79,6 +79,14 @@ class pxObject {
     return this.__root.a;
   }
 
+  set sx(sx) {
+    this.__root.sx = sx;
+  }
+
+  get sx() {
+    return this.__root.sx;
+  }
+
   set focus(focus) {
     this.__root.focus = focus;
   }
