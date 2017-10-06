@@ -172,13 +172,6 @@ class pxImage extends pxObject {
     this.props.t = 'image';
   }
 
-  set resource(resource) {
-    this.__root.resource = resource;
-  }
-
-  get resource() {
-    return this.__root.resource;
-  }
 }
 
 // -------------------------------------------------------------------- //
