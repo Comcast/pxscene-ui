@@ -119,6 +119,14 @@ class pxObject {
     return this.__root.parent;
   }
 
+  moveToFront() {
+    this.__root.moveToFront();
+  }
+
+  moveToBack() {
+    this.__root.moveToBack();
+  }
+
   animate(json, duration, tween, type, count) {
     return this.__root.animate(json, duration, tween, type, count);
   }
