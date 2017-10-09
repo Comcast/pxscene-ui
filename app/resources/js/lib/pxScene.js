@@ -79,6 +79,22 @@ class pxObject {
     return this.__root.a;
   }
 
+  set sx(sx) {
+    this.__root.sx = sx;
+  }
+
+  get sx() {
+    return this.__root.sx;
+  }
+
+  set sy(sy) {
+    this.__root.sy = sy;
+  }
+
+  get sy() {
+    return this.__root.sy;
+  }
+
   set focus(focus) {
     this.__root.focus = focus;
   }
@@ -112,8 +128,13 @@ class pxObject {
   }
 
   animate(json, duration, tween, type, count) {
-    this.__root.animate(json, duration, tween, type, count);
+    return this.__root.animate(json, duration, tween, type, count);
   }
+
+  animateTo(json, duration, tween, type, count) {
+    return this.__root.animateTo(json, duration, tween, type, count);
+  }
+
 }
 
 class pxRect extends pxObject {
@@ -158,6 +179,7 @@ class pxImage extends pxObject {
     super(props);
     this.props.t = 'image';
   }
+
 }
 
 // -------------------------------------------------------------------- //
