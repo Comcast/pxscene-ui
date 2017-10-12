@@ -1,5 +1,4 @@
 var Queue = require('promise-queue');
-var logger = require('logger');
 
 // -------------------------------------------------------------------- //
 // Module variables
@@ -135,7 +134,6 @@ class pxObject {
   animateTo(json, duration, tween, type, count) {
     return this.__root.animateTo(json, duration, tween, type, count);
   }
-
 }
 
 class pxRect extends pxObject {
@@ -184,7 +182,6 @@ class pxImage extends pxObject {
     super(props);
     this.props.t = 'image';
   }
-
 }
 
 // -------------------------------------------------------------------- //
