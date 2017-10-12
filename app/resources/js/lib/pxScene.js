@@ -1,4 +1,5 @@
 var Queue = require('promise-queue');
+var logger = require('logger');
 
 // -------------------------------------------------------------------- //
 // Module variables
@@ -171,6 +172,10 @@ class pxTextBox extends pxText {
   constructor(props) {
     super(props);
     this.props.t = 'textBox';
+  }
+
+  measureText() {
+    return this.__root.measureText();
   }
 }
 
