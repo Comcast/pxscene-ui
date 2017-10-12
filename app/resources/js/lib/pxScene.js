@@ -134,7 +134,6 @@ class pxObject {
   animateTo(json, duration, tween, type, count) {
     return this.__root.animateTo(json, duration, tween, type, count);
   }
-
 }
 
 class pxRect extends pxObject {
@@ -172,6 +171,10 @@ class pxTextBox extends pxText {
     super(props);
     this.props.t = 'textBox';
   }
+
+  measureText() {
+    return this.__root.measureText();
+  }
 }
 
 class pxImage extends pxObject {
@@ -179,7 +182,6 @@ class pxImage extends pxObject {
     super(props);
     this.props.t = 'image';
   }
-
 }
 
 // -------------------------------------------------------------------- //
