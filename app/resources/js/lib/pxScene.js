@@ -8,8 +8,7 @@ var Queue = require('promise-queue');
  * A reference to the global px object.
  * @type {Object}
  */
-// eslint-disable-next-line no-undef
-const PX = px;
+const PX = px; // eslint-disable-line no-undef
 
 /**
  * The names of the events that objects can register handlers for.
@@ -34,6 +33,14 @@ const EVENTS = [
  * @type {Object}
  */
 var SCENE;
+
+/**
+ * A reference to the root element added to the Scene instance.
+ *
+ * This is used to unmount all of the components when the scene closes.
+ * @type {Object}
+ */
+var ROOT_ELEMENT;
 
 /**
  * A queue for making sure that updates do not overlap in their execution.
@@ -475,6 +482,19 @@ function initScene() {
 
     // Update the module variable referencing the scene instance.
     SCENE = SCENE || imports.scene;
+
+    // The scene instance receives an 'onClose' when it's about to close/exit.
+    // Currently, only the scene instance can receive the 'onClose'.
+    SCENE.on('onClose', function(e) {
+      console.info('Scene instance closing');
+
+      // If the scene isn't empty, then delete the root element to unmount it
+      // (and all of its child components).
+      if (ROOT_ELEMENT) {
+        deleteElement(ROOT_ELEMENT);
+      }
+    });
+
     console.info('Scene instance initialized');
 
     // Pass the scene to any promises down the chain.
@@ -582,7 +602,6 @@ function renderElement(element, parent) {
   // renderComponent() and renderObject() will recursively call this method.
   if (element instanceof pxComponent) {
     return renderComponent(element, parent);
-    // return renderComponent(element, parent);
   } else {
     return renderObject(element, parent);
   }
@@ -951,7 +970,8 @@ var render = function(element, parent) {
       // Queue the render job to prevent updates from taking place before
       // the components have mounted.
       UPDATE_QUEUE.add(async function() {
-        await renderElement(element, parent);
+        // Update the reference to the root element in the scene.
+        ROOT_ELEMENT = await renderElement(element, parent);
       });
     })
     .catch(function(error) {
