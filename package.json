@@ -1,6 +1,6 @@
 {
   "name": "px2react",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A library for creating React apps in pxScene.",
   "main": "lib/px2react.js",
   "directories": {
@@ -13,7 +13,11 @@
     "type": "git",
     "url": "https://github.comcast.com/hhur200/px2react.git"
   },
-  "keywords": ["pxscene", "react", "javascript"],
+  "keywords": [
+    "pxscene",
+    "react",
+    "javascript"
+  ],
   "author": "Harry Hur",
   "license": "Apache-2.0",
   "dependencies": {
