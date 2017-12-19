@@ -1,6 +1,6 @@
 {
   "name": "px2react",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A library for creating React apps in pxScene.",
   "main": "lib/px2react.js",
   "directories": {
