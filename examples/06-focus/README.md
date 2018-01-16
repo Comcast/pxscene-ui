@@ -5,6 +5,7 @@ GOALS:
 * Introduce px2react's implementation of the 'refs' feature from React.
 * Show how to use 'refs' to directly access the properties of the underlying pxScene objects.
 * Show an example for handling the onBlur event.
+* Show how to use 'moveToFront()' to manipulate an object's z-order.
 
 NOTES:
 * This builds on the previous example for high-order components.

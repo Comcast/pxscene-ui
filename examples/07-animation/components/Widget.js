@@ -120,6 +120,7 @@ class Widget extends px2react.pxComponent {
 
     if (hasFocus) {
       this.refs.widget.focus = true;
+      this.refs.widget.moveToFront();
     }
   }
 
@@ -148,6 +149,7 @@ class Widget extends px2react.pxComponent {
 
     if (hasFocus && !prevState.hasFocus) {
       this.refs.widget.focus = true;
+      this.refs.widget.moveToFront();
     }
   }
 

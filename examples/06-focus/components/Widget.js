@@ -128,19 +128,24 @@ class Widget extends px2react.pxComponent {
       // 13) IMPORTANT: This is just setting the 'focus' property of the actual
       // pxScene object.
       this.refs.widget.focus = true;
+      // 14) You can invoke the moveToFront() method on any pxObject instance to
+      // move it to the top of the z-order. moveToFront() is equivalent to the
+      // moveToFront() method defined by the pxScene API.
+      this.refs.widget.moveToFront();
     }
   }
 
-  // 14) This is the standard lifecycle method from React. px2react invokes this
+  // 15) This is the standard lifecycle method from React. px2react invokes this
   // method after each time render() returns (except for the first time).
   componentDidUpdate(prevProps, prevState) {
     const { hasFocus } = this.state;
 
-    // 15) Changes to 'x' and 'y' in the state also cause componentDidUpdate()
+    // 16) Changes to 'x' and 'y' in the state also cause componentDidUpdate()
     // to be invoked. Therefore, only update 'focus' if 'this.state.hasFocus'
     // is different from 'prevState.hasFocus'.
     if (hasFocus && !prevState.hasFocus) {
       this.refs.widget.focus = true;
+      this.refs.widget.moveToFront();
     }
   }
 
