@@ -1,4 +1,4 @@
-An example for creating common fading transitions via double-buffering.
+An example for creating common fading transitions to update displayed content.
 
 GOALS:
 * Show how to use two otherwise-identical elements to fade out old content and fade in new content.
