@@ -1,0 +1,38 @@
+{
+  "name": "px2react-example-08",
+  "version": "1.0.0",
+  "description": "An example for creating animations for fading transitions",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack",
+    "//": "NODE_ENV is an environment variable used (by convention) to state",
+    "//": "whether a particular environment is a production or a development",
+    "//": "environment.",
+    "//": "Add a script named 'build-prod' so that 'npm run build-prod' builds",
+    "//": "the app for the production environment.",
+    "build-prod": "NODE_ENV='production' webpack",
+    "start": "webpack-dev-server"
+  },
+  "devDependencies": {
+    "babel-core": "^6.25.0",
+    "babel-eslint": "^8.0.3",
+    "babel-loader": "^7.1.0",
+    "babel-preset-env": "^1.5.2",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-minify-webpack-plugin": "^0.2.0",
+    "smart-banner-webpack-plugin": "^3.0.1",
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.5.0",
+    "copy-webpack-plugin": "^4.1.0",
+    "eslint": "^4.3.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-loader": "^1.9.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1"
+  },
+  "dependencies": {
+    "px2react": "^1.1.1"
+  }
+}
