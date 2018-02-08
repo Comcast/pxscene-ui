@@ -32,6 +32,6 @@
     "eslint-plugin-standard": "^3.0.1"
   },
   "dependencies": {
-    "px2react": "^1.1.1"
+    "px2react": "^1.4.0"
   }
 }

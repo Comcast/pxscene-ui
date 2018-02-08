@@ -1,6 +1,8 @@
 const px2react = require('px2react');
 const pxRect = px2react.pxRect;
 const pxTextBox = px2react.pxTextBox;
+const ALIGN_VERTICAL = px2react.ALIGN_VERTICAL;
+const ALIGN_HORIZONTAL = px2react.ALIGN_HORIZONTAL;
 
 class Widget extends px2react.pxComponent {
   constructor(props) {
@@ -33,8 +35,8 @@ class Widget extends px2react.pxComponent {
       y: 5,
       w: w,
       h: h,
-      alignHorizontal: 1,
-      alignVertical: 1,
+      alignHorizontal: ALIGN_HORIZONTAL.CENTER,
+      alignVertical: ALIGN_VERTICAL.CENTER,
       text: hasFocus ? '>' + label + '<' : label,
       textColor: hasFocus ? 0xffffffff : 0xff0000ff
     });

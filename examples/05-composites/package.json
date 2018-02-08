@@ -18,6 +18,6 @@
     "webpack-dev-server": "^2.5.0"
   },
   "dependencies": {
-    "px2react": "^1.1.0"
+    "px2react": "^1.4.0"
   }
 }

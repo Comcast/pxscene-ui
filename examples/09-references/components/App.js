@@ -1,6 +1,7 @@
 const px2react = require('px2react');
 const pxObject = px2react.pxObject;
 const Widget = require('Widget');
+const ANIMATION = px2react.ANIMATION;
 
 // 1) For this example, our App component contains two nearly identical
 // instances of the Widget component. The goal is to animate the two using two
@@ -60,7 +61,13 @@ class App extends px2react.pxComponent {
     this.refs.widget1Component.animateText();
     // 12) With a reference to the pxRect within the second Widget, we can just
     // animate it directly.
-    this.refs.widget2Rect.animate({ a: 0 }, 0.5, 1, 1, -1);
+    this.refs.widget2Rect.animate(
+      { a: 0 },
+      0.5,
+      ANIMATION.TWEEN_EXP1,
+      ANIMATION.OPTION_OSCILLATE,
+      ANIMATION.COUNT_FOREVER
+    );
   }
 }
 
