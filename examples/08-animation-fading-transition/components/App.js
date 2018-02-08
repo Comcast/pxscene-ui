@@ -1,6 +1,7 @@
 const px2react = require('px2react');
 const pxObject = px2react.pxObject;
 const pxImage = px2react.pxImage;
+const STRETCH = px2react.STRETCH;
 
 // 1) Our example app will basically cycle through this array of URLs for the
 // image to display.
@@ -38,8 +39,8 @@ class App extends px2react.pxComponent {
     let outgoingBuffer = new pxImage({
       w: 640,
       h: 480,
-      stretchX: 1,
-      stretchY: 1,
+      stretchX: STRETCH.STRETCH,
+      stretchY: STRETCH.STRETCH,
       url: outgoingUrl,
       // 5) The outgoing frame will always start out with an alpha of 1.
       a: 1,
@@ -53,8 +54,8 @@ class App extends px2react.pxComponent {
     let incomingBuffer = new pxImage({
       w: 640,
       h: 480,
-      stretchX: 1,
-      stretchY: 1,
+      stretchX: STRETCH.STRETCH,
+      stretchY: STRETCH.STRETCH,
       url: incomingUrl,
       // 7) The incoming frame will always start out with an alpha of 0.
       a: 0,

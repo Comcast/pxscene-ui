@@ -1,6 +1,9 @@
 const px2react = require('px2react');
 const pxRect = px2react.pxRect;
 const pxTextBox = px2react.pxTextBox;
+const ALIGN_HORIZONTAL = px2react.ALIGN_HORIZONTAL;
+const ALIGN_VERTICAL = px2react.ALIGN_VERTICAL;
+const ANIMATION = px2react.ANIMATION;
 
 class Widget extends px2react.pxComponent {
   render() {
@@ -12,8 +15,8 @@ class Widget extends px2react.pxComponent {
       w: w,
       h: h,
       text: label,
-      alignHorizontal: 1,
-      alignVertical: 1,
+      alignHorizontal: ALIGN_HORIZONTAL.CENTER,
+      alignVertical: ALIGN_VERTICAL.CENTER,
       pixelSize: 15,
       // 2) As shown in previous examples, this just allows this component to
       // create a reference to one of its own elements.
@@ -47,7 +50,13 @@ class Widget extends px2react.pxComponent {
   // 6) Define a method for animating the pxTextBox element. But it won't be
   // called by this class itself.
   animateText() {
-    this.refs.textBox.animate({ pixelSize: 20 }, 0.5, 1, 1, -1);
+    this.refs.textBox.animate(
+      { pixelSize: 20 },
+      0.5,
+      ANIMATION.TWEEN_EXP1,
+      ANIMATION.OPTION_OSCILLATE,
+      ANIMATION.COUNT_FOREVER
+    );
   }
 }
 
