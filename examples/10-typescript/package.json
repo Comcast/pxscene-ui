@@ -1,0 +1,32 @@
+{
+  "name": "pxsceneUI-example-10",
+  "version": "1.0.0",
+  "description": "Example for TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack",
+    "//": "the app for the production environment.",
+    "build-prod": "NODE_ENV='production' webpack",
+    "start": "webpack-dev-server"
+  },
+  "devDependencies": {
+    "babel-minify-webpack-plugin": "^0.2.0",
+    "eslint": "^4.3.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-loader": "^1.9.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "eslint-plugin-typescript": "^0.12.0",
+    "smart-banner-webpack-plugin": "^3.0.1",
+    "ts-loader": "^3.4.0",
+    "typescript": "^2.8.3",
+    "typescript-eslint-parser": "^15.0.0",
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.5.0"
+  },
+  "dependencies": {
+    "pxsceneUI": "^2.0.5"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  'root': true,
+  'env': {
+    'browser': true,
+    'commonjs': true,
+    'es6': true,
+    'node': true
+  },
+  'extends': [
+    'standard',
+    'eslint:recommended',
+  ],
+  // Using babel-eslint parser for decorators
+  'parser': 'babel-eslint',
+  'parserOptions': {
+    'ecmaFeatures': {
+      'experimentalObjectRestSpread': true,
+    },
+    'sourceType': 'module'
+  },
+  'rules': {
+    'no-console': 0,
+    'valid-jsdoc': [
+      'warn', {
+        'requireReturn': true,
+        'requireReturnType': true,
+        'requireParamDescription': true,
+        'requireReturnDescription': true
+      }
+    ]
+  }
+}

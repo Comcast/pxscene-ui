@@ -1,0 +1,32 @@
+{
+  'env': {
+    'browser': true,
+    'commonjs': true,
+    'es6': true,
+    'node': true
+  },
+  'extends': [
+    'standard',
+    'eslint:recommended',
+  ],
+  // Using typescript-eslint parser for TS syntax
+  'parser': 'typescript-eslint-parser',
+  'parserOptions': {
+    'ecmaFeatures': {
+      'experimentalObjectRestSpread': true,
+    },
+    'sourceType': 'module'
+  },
+  'plugins': ['typescript'],
+  'rules': {
+    'no-console': 0,
+    'valid-jsdoc': [
+      'warn', {
+        'requireReturn': true,
+        'requireReturnType': true,
+        'requireParamDescription': true,
+        'requireReturnDescription': true
+      }
+    ]
+  }
+}
