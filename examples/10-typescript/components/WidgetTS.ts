@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-import * as pxsceneUI from 'pxsceneUI';
+import * as pxsceneUI from 'pxscene-ui';
 const pxRect = pxsceneUI.pxRect;
 const pxTextBox = pxsceneUI.pxTextBox;
 const ALIGN_VERTICAL = pxsceneUI.ALIGN_VERTICAL;

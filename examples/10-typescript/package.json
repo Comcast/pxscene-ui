@@ -27,6 +27,6 @@
     "webpack-dev-server": "^2.5.0"
   },
   "dependencies": {
-    "pxsceneUI": "^2.0.5"
+    "pxscene-ui": "^2.1.0"
   }
 }

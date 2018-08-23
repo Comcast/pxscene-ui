@@ -16,7 +16,7 @@
 
 // 1) Module imports work slightly different in TypeScript (when the module
 // doesn't have a default export).
-import * as pxsceneUI from 'pxsceneUI';
+import * as pxsceneUI from 'pxscene-ui';
 // 2) Import a component written in JavaScript.
 import WidgetJS from 'WidgetJS';
 // 3) Import the same component written in TypeScript.
