@@ -649,7 +649,7 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of cond
 
 ## Credits
 
-- **Harry Hur** (hhur200@gmail.com) - _Creator and maintainer_
+- **Harry Hur** (https://github.com/hhur200) - _Creator and maintainer_
 
 ## License
 
