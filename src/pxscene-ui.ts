@@ -1,18 +1,18 @@
 /**
-* Copyright 2018 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2018 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import Queue from 'promise-queue';
 import { pxObject, pxsceneObject } from './objects';
@@ -306,11 +306,11 @@ function calculateChildContext(component) {
 // component.
 // -------------------------------------------------------------------- //
 
-function callComponentRender(component) {
+async function callComponentRender(component) {
   try {
     // Prevent setState() from being called within render().
     delete component.setState;
-    return component.render();
+    return await component.render();
   } catch (error) {
     throw error;
   } finally {
@@ -473,12 +473,7 @@ function importModules(component) {
    * such as 'ws' and 'https'.
    */
   return PX.import(modules).then(imports => {
-    console.info(
-      'Imported modules for ' +
-        component.className +
-        ': ' +
-        JSON.stringify(modules)
-    );
+    console.info('Imported modules for ' + component.className + ': ' + JSON.stringify(modules));
     // Add imported module references directly to the component.
     attachModules(component, imports);
 
@@ -631,8 +626,9 @@ function renderComponent(component, parent, context = {}, onError = null) {
       callComponentWillMount(component);
 
       // The root element is returned by pxComponent.render().
-      var rootElement = callComponentRender(component);
-
+      return callComponentRender(component);
+    })
+    .then(rootElement => {
       // If the component has defined a componentDidCatch method, then use it as
       // the error handler for all of the elements in its tree (excluding
       // itself).
@@ -714,10 +710,7 @@ function updateObjectProps(oldObject, newObject) {
   // Apply the updated props to the underlying pxscene object.
   for (var key in newObject.props) {
     // Only update properties that the pxscene object already has.
-    if (
-      newObject.props.hasOwnProperty(key) &&
-      newObject.__root.hasOwnProperty(key)
-    ) {
+    if (newObject.props.hasOwnProperty(key) && newObject.__root.hasOwnProperty(key)) {
       newObject.__root[key] = newObject.props[key];
     }
   }
@@ -844,12 +837,7 @@ function replaceElement(oldElement, newElement, context = {}, onError = null) {
  *                                             the updated element.
  * @return {Promise}            A promise that resolves to the updated element.
  */
-async function updateElement(
-  oldElement,
-  newElement,
-  context = {},
-  onError = null
-) {
+async function updateElement(oldElement, newElement, context = {}, onError = null) {
   // Check trivial case where the class of the element has changed.
   if (oldElement.className !== newElement.className) {
     // Just re-create the entire object tree.
@@ -888,12 +876,7 @@ async function updateElement(
  *                              headed by the updated pxObject.
  * @return {Promise}            A promise that resolves to the updated object.
  */
-async function updateObject(
-  oldObject,
-  newObject,
-  context = {},
-  onError = null
-) {
+async function updateObject(oldObject, newObject, context = {}, onError = null) {
   // TODO For now, just re-create the entire object tree if the number of
   // children has changed.
   if (oldObject.__children.length !== newObject.__children.length) {
@@ -913,12 +896,7 @@ async function updateObject(
   var promises = [];
   for (var i = oldObject.__children.length - 1; i >= 0; i--) {
     promises.push(
-      updateElement(
-        oldObject.__children[i],
-        newObject.__children[i],
-        context,
-        onError
-      )
+      updateElement(oldObject.__children[i], newObject.__children[i], context, onError)
     );
   }
   newObject.__children = oldObject.__children;
@@ -979,7 +957,7 @@ async function updateComponent(component, nextProps, nextState, force = false) {
   // Prepare to update the component's root element with any changes that
   // might be reflected in the new root element returned by render().
   var oldElement = component.__children[0];
-  var newElement = callComponentRender(component);
+  var newElement = await callComponentRender(component);
 
   // We'll need to pass the component context to updateElement(), in case a
   // child component needs to be replaced.
