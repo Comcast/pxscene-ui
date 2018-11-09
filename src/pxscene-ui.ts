@@ -1,18 +1,18 @@
 /**
-* Copyright 2018 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2018 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import Queue from 'promise-queue';
 import { pxObject, pxsceneObject } from './objects';
@@ -274,16 +274,28 @@ function setState(skipUpdate, state) {
     applyComponentUpdates(this, nextProps, nextState);
   } else {
     // Queue a task to recursively update this component and its children.
-    UPDATE_QUEUE.add(async () => {
-      // Delay calculating the next props/state so that any ongoing updates
-      // can be resolved first.
-      var nextState = calculateNextState(this, state);
-      var nextProps = calculateNextProps(this, {});
-      await updateComponent(this, nextProps, nextState);
-    }).catch(error => {
-      console.error('Error updating component: ', error);
-      this.__error(error);
-    });
+    // TODO It seems to improve app stability (less freezes/crashes) if we add a
+    // small delay before component updates are applied. This delay hopefully
+    // gives pxScene more time to 'unlock' the objects event queues before an
+    // update tries to add/remove event listeners.
+    new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve();
+      }, 50);
+    })
+      .then(() => {
+        UPDATE_QUEUE.add(async () => {
+          // Delay calculating the next props/state so that any ongoing updates
+          // can be resolved first.
+          var nextState = calculateNextState(this, state);
+          var nextProps = calculateNextProps(this, {});
+          await updateComponent(this, nextProps, nextState);
+        });
+      })
+      .catch(error => {
+        console.error('Error updating component: ', error);
+        this.__error(error);
+      });
   }
 }
 
@@ -473,12 +485,7 @@ function importModules(component) {
    * such as 'ws' and 'https'.
    */
   return PX.import(modules).then(imports => {
-    console.info(
-      'Imported modules for ' +
-        component.className +
-        ': ' +
-        JSON.stringify(modules)
-    );
+    console.info('Imported modules for ' + component.className + ': ' + JSON.stringify(modules));
     // Add imported module references directly to the component.
     attachModules(component, imports);
 
@@ -714,10 +721,7 @@ function updateObjectProps(oldObject, newObject) {
   // Apply the updated props to the underlying pxscene object.
   for (var key in newObject.props) {
     // Only update properties that the pxscene object already has.
-    if (
-      newObject.props.hasOwnProperty(key) &&
-      newObject.__root.hasOwnProperty(key)
-    ) {
+    if (newObject.props.hasOwnProperty(key) && newObject.__root.hasOwnProperty(key)) {
       newObject.__root[key] = newObject.props[key];
     }
   }
@@ -844,12 +848,7 @@ function replaceElement(oldElement, newElement, context = {}, onError = null) {
  *                                             the updated element.
  * @return {Promise}            A promise that resolves to the updated element.
  */
-async function updateElement(
-  oldElement,
-  newElement,
-  context = {},
-  onError = null
-) {
+async function updateElement(oldElement, newElement, context = {}, onError = null) {
   // Check trivial case where the class of the element has changed.
   if (oldElement.className !== newElement.className) {
     // Just re-create the entire object tree.
@@ -888,12 +887,7 @@ async function updateElement(
  *                              headed by the updated pxObject.
  * @return {Promise}            A promise that resolves to the updated object.
  */
-async function updateObject(
-  oldObject,
-  newObject,
-  context = {},
-  onError = null
-) {
+async function updateObject(oldObject, newObject, context = {}, onError = null) {
   // TODO For now, just re-create the entire object tree if the number of
   // children has changed.
   if (oldObject.__children.length !== newObject.__children.length) {
@@ -913,12 +907,7 @@ async function updateObject(
   var promises = [];
   for (var i = oldObject.__children.length - 1; i >= 0; i--) {
     promises.push(
-      updateElement(
-        oldObject.__children[i],
-        newObject.__children[i],
-        context,
-        onError
-      )
+      updateElement(oldObject.__children[i], newObject.__children[i], context, onError)
     );
   }
   newObject.__children = oldObject.__children;
