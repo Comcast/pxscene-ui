@@ -174,15 +174,27 @@ export class pxComponent<
   }
 
   forceUpdate() {
-    UPDATE_QUEUE.add(async () => {
-      // There aren't any changes in state or props.
-      var nextState = calculateNextState(this, {});
-      var nextProps = calculateNextProps(this, {});
-      await updateComponent(this, nextProps, nextState, true);
-    }).catch(error => {
-      console.error('Error updating component: ', error);
-      this.__error(error);
-    });
+    // TODO It seems to improve app stability (less freezes/crashes) if we add a
+    // small delay before component updates are applied. This delay hopefully
+    // gives pxScene more time to 'unlock' the objects event queues before an
+    // update tries to add/remove event listeners.
+    new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve();
+      }, 50);
+    })
+      .then(() => {
+        UPDATE_QUEUE.add(async () => {
+          // There aren't any changes in state or props.
+          var nextState = calculateNextState(this, {});
+          var nextProps = calculateNextProps(this, {});
+          await updateComponent(this, nextProps, nextState, true);
+        });
+      })
+      .catch(error => {
+        console.error('Error updating component: ', error);
+        this.__error(error);
+      });
   }
 
   /*
