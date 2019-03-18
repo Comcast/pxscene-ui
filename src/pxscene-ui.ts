@@ -746,44 +746,39 @@ function updateObjectProps(oldObject, newObject) {
  * that compose the element (and all of its children) from the current scene.
  *
  * @param  {(pxObject|pxComponent)} element The element to be removed.
- * @return {(pxObject|pxComponent)}         A promise that resolves to the
- *                                          removed element.
+ * @return {(pxObject|pxComponent)}         The removed element.
  */
 function deleteElement(element) {
   // Create separate promises to update the children recursively.
-  var promises = [];
-  for (var i = element.__children.length - 1; i >= 0; i--) {
-    promises.push(deleteElement(element.__children[i]));
+  for (let i = element.__children.length - 1; i >= 0; i--) {
+    deleteElement(element.__children[i]);
   }
 
-  // Return a promise that resolves when every child promise has resolved.
-  return Promise.all(promises).then(() => {
-    // Delete the references to the children.
-    for (var i = element.__children.length - 1; i >= 0; i--) {
-      element.__children[i] = null;
-    }
+  // Delete the references to the children.
+  for (let i = element.__children.length - 1; i >= 0; i--) {
+    element.__children[i] = null;
+  }
 
-    if (element instanceof pxObject) {
-      unregisterEventHandlers(element);
-    } else {
-      callComponentWillUnmount(element);
-    }
+  if (element instanceof pxObject) {
+    unregisterEventHandlers(element);
+  } else {
+    callComponentWillUnmount(element);
+  }
 
-    // If the element has a function for its 'ref' props, call it now as it
-    // unmounts. Pass 'null' to cleanup any references held by parents.
-    // This applies to pxComponents as well as pxObjects.
-    const { ref = null } = element.props;
-    if (typeof ref == 'function') {
-      ref(null);
-    }
+  // If the element has a function for its 'ref' props, call it now as it
+  // unmounts. Pass 'null' to cleanup any references held by parents.
+  // This applies to pxComponents as well as pxObjects.
+  const { ref = null } = element.props;
+  if (typeof ref == 'function') {
+    ref(null);
+  }
 
-    // Delete the reference to the pxScene object.
-    element.__root.remove();
-    element.__root = null;
+  // Delete the reference to the pxScene object.
+  element.__root.remove();
+  element.__root = null;
 
-    // Pass the removed object to any promises down the chain.
-    return element;
-  });
+  // Pass the removed object to any promises down the chain.
+  return element;
 }
 
 /**
@@ -816,11 +811,15 @@ function replaceElement(oldElement, newElement, context = {}, onError = null) {
       // Remove the outgoing element first.
       // This allows any outgoing pxComponents to free up existing 'refs' before
       // any new 'refs' are created.
-      return deleteElement(oldElement)
-        .catch(error => {
+      return new Promise((resolve, reject) => {
+        try {
+          deleteElement(oldElement);
+          resolve();
+        } catch (error) {
           console.error('Error removing element: ', error);
-          throw error;
-        })
+          reject(error);
+        }
+      })
         .then(() => {
           // Then render the new element.
           return renderElement(newElement, parentObj, context, onError);
