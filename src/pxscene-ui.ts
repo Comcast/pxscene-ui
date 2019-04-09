@@ -956,6 +956,16 @@ async function updateObject(oldObject, newObject, context = {}, onError = null) 
  *                                 component.
  */
 async function updateComponent(component, nextProps, nextState, force = false) {
+  // First check if the old component's root element has been removed.
+  // Since all updates are queued and processed one at a time, this can happen
+  // if the old component was removed by its parent while a subsequent update is
+  // still in flight.
+  var oldElement = component.__children[0];
+  if (oldElement === null) {
+    // Do nothing.
+    return component;
+  }
+
   // Make copies of the component's state/props before any changes are applied.
   var prevProps = Object.assign({}, component.props);
   var prevState = Object.assign({}, component.__state);
@@ -978,7 +988,6 @@ async function updateComponent(component, nextProps, nextState, force = false) {
 
   // Prepare to update the component's root element with any changes that
   // might be reflected in the new root element returned by render().
-  var oldElement = component.__children[0];
   var newElement = callComponentRender(component);
 
   // We'll need to pass the component context to updateElement(), in case a
