@@ -1087,7 +1087,7 @@ export function createImageResource(props: any): object {
  * @return {Object}     The 'info' object from the current scene. Returns
  *                      'undefined' if the scene has not been created yet.
  */
-export function getSceneInfo(): object {
+export function getSceneInfo(): any {
   // Return a copy of the 'info' object if scene has been created.
   return typeof SCENE == 'object' ? Object.assign({}, SCENE.info) : undefined;
 }
@@ -1110,6 +1110,18 @@ export function getSceneWidth(): number {
  */
 export function getSceneHeight(): number {
   return typeof SCENE == 'object' ? SCENE.h : undefined;
+}
+
+/**
+ * Returns the amount of memory currently used by the scene.
+ *
+ * @return {object}     An object reporting the various types of memory used, in bytes.
+ */
+export function getMemoryUsage(): any {
+  let texture = typeof SCENE == 'object' ? SCENE.textureMemoryUsage() : undefined;
+  //@ts-ignore
+  let mem = process.memoryUsage();
+  return { ...mem, texture };
 }
 
 /**
