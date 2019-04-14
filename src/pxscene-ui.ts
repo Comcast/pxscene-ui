@@ -1035,7 +1035,7 @@ async function updateComponent(component, nextProps, nextState, force = false) {
  *                          scene.
  * @return {void}
  */
-export var render = async function(
+export async function render(
   element: pxObject | pxComponent<any, any>,
   parent: pxsceneObject = null
 ) {
@@ -1053,7 +1053,7 @@ export var render = async function(
       ROOT_ELEMENT = null;
     });
   });
-};
+}
 
 /**
  * Creates a font resource that can be shared.
@@ -1063,10 +1063,10 @@ export var render = async function(
  *                        proxy, etc).
  * @return {Object}       The pxScene fontResource object created.
  */
-export var createFontResource = function(props) {
+export function createFontResource(props: any): object {
   props.t = 'fontResource';
   return SCENE.create(props);
-};
+}
 
 /**
  * Creates an image resource that can be shared.
@@ -1076,10 +1076,10 @@ export var createFontResource = function(props) {
  *                        proxy, w, h, etc).
  * @return {Object}       The pxScene imageResource object created.
  */
-export var createImageResource = function(props) {
+export function createImageResource(props: any): object {
   props.t = 'imageResource';
   return SCENE.create(props);
-};
+}
 
 /**
  * Returns basic info on the current scene.
@@ -1087,10 +1087,10 @@ export var createImageResource = function(props) {
  * @return {Object}     The 'info' object from the current scene. Returns
  *                      'undefined' if the scene has not been created yet.
  */
-export var getSceneInfo = function() {
+export function getSceneInfo(): object {
   // Return a copy of the 'info' object if scene has been created.
   return typeof SCENE == 'object' ? Object.assign({}, SCENE.info) : undefined;
-};
+}
 
 /**
  * Returns the current width of the scene.
@@ -1098,9 +1098,9 @@ export var getSceneInfo = function() {
  * @return {number}     The width in pixel-sized units of the scene. Returns
  *                      'undefined' if the scene has not been created yet.
  */
-export var getSceneWidth = function() {
+export function getSceneWidth(): number {
   return typeof SCENE == 'object' ? SCENE.w : undefined;
-};
+}
 
 /**
  * Returns the current height of the scene.
@@ -1108,9 +1108,31 @@ export var getSceneWidth = function() {
  * @return {number}     The height in pixel-sized units of the scene. Returns
  *                      'undefined' if the scene has not been created yet.
  */
-export var getSceneHeight = function() {
+export function getSceneHeight(): number {
   return typeof SCENE == 'object' ? SCENE.h : undefined;
-};
+}
+
+/**
+ * Suspends the current scene, freeing up texture memory.
+ *
+ * @return {void}
+ */
+export function suspendScene(): void {
+  if (typeof SCENE == 'object') {
+    SCENE.suspend();
+  }
+}
+
+/**
+ * Resumes the current scene, reclaiming needed texture memory.
+ *
+ * @return {void}
+ */
+export function resumeScene(): void {
+  if (typeof SCENE == 'object') {
+    SCENE.resume();
+  }
+}
 
 // -------------------------------------------------------------------- //
 // Public constants
