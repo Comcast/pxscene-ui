@@ -749,6 +749,11 @@ function updateObjectProps(oldObject, newObject) {
  * @return {(pxObject|pxComponent)}         The removed element.
  */
 function deleteElement(element) {
+  // Do nothing if the element is null or undefined.
+  if (!element) {
+    return element;
+  }
+
   // Create separate promises to update the children recursively.
   for (let i = element.__children.length - 1; i >= 0; i--) {
     deleteElement(element.__children[i]);
@@ -774,8 +779,11 @@ function deleteElement(element) {
   }
 
   // Delete the reference to the pxScene object.
-  element.__root.remove();
-  element.__root = null;
+  // Do nothing if the reference is null or undefined.
+  if (element.__root) {
+    element.__root.remove();
+    element.__root = null;
+  }
 
   // Pass the removed object to any promises down the chain.
   return element;
