@@ -25,3 +25,4 @@ export * from './pxTextBox';
 export * from './pxImage';
 export * from './pxImage9';
 export * from './pxWayland';
+export * from './pxScene';
